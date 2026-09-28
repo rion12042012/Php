@@ -17,10 +17,10 @@
 
 
 
- $file1 = fopen("myfile.txt","r");
- while (!feof($file1)) {
-    echo fgets($file1) ."<br>";
- }
+//  $file1 = fopen("myfile.txt","r");
+//  while (!feof($file1)) {
+//     echo fgets($file1) ."<br>";
+//  }
 
  //fwite
 
@@ -32,7 +32,7 @@
 
  //w+ (read and write only)
  $file2 = fopen("data.txt","w+");
- fwrite($file2, "Welcome to digital school!")
+ fwrite($file2, "Welcome to digital school!");
 
 
  //a+
