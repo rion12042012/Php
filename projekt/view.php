@@ -1,58 +1,59 @@
 
 <?php
-include "config.php";
-
-$result = mysqli_query($conn, "SELECT * FROM products");
+include 'config.php';
+$result = mysqli_query($conn, "SELECT * FROM products ORDER BY id DESC");
 ?>
 
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Our Menu</title>
-    <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>View Products</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<header>
-    <h1>THE MINT COFFEE</h1>
-    <a href="index.php">Home</a>
-</header>
+<div class="container py-5">
+<div class="table-card">
 
-<h2 class="heading">Our Products</h2>
+<div class="d-flex justify-content-between mb-4">
+<h2>All Products</h2>
+<a href="create.php" class="btn-coffee">+ Add Product</a>
+</div>
 
-<a href="create.php" class="btn">Add New Product</a>
+<div class="table-responsive">
+<table class="table table-hover">
+<thead>
+<tr>
+<th>ID</th>
+<th>Image</th>
+<th>Name</th>
+<th>Category</th>
+<th>Description</th>
+<th>Price</th>
+</tr>
+</thead>
+<tbody>
 
-<div class="products">
+<?php while($row = mysqli_fetch_assoc($result)): ?>
+<tr>
+<td><?php echo $row['id']; ?></td>
+<td><img src="<?php echo htmlspecialchars($row['image']); ?>" width="60" alt=""></td>
+<td><?php echo htmlspecialchars($row['name']); ?></td>
+<td><?php echo htmlspecialchars($row['category']); ?></td>
+<td><?php echo htmlspecialchars($row['description']); ?></td>
+<td><?php echo number_format((float)$row['price'], 2); ?> €</td>
+</tr>
+<?php endwhile; ?>
 
-<?php while($row = mysqli_fetch_assoc($result)) { ?>
+</tbody>
+</table>
+</div>
 
-    <div class="card">
-
-        <h3>
-            <?php echo htmlspecialchars($row['name']); ?>
-        </h3>
-
-        <p>
-            <?php echo htmlspecialchars($row['description']); ?>
-        </p>
-
-        <h4>
-            <?php echo $row['price']; ?> €
-        </h4>
-
-        <a href="edit.php?id=<?php echo $row['id']; ?>">
-            Edit
-        </a>
-
-        <a href="delete.php?id=<?php echo $row['id']; ?>"
-           onclick="return confirm('Are you sure you want to delete this product?')">
-            Delete
-        </a>
-
-    </div>
-
-<?php } ?>
-
+<a href="admin.php" class="btn-coffee">Back to Dashboard</a>
+</div>
 </div>
 
 </body>

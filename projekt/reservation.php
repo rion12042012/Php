@@ -1,74 +1,79 @@
 
 <?php
-include "config.php";
+include 'config.php';
 
-$message = "";
+$message = '';
 
-if(isset($_POST['reserve'])) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $name = trim($_POST['customer_name']);
+    $email = trim($_POST['email']);
+    $date = $_POST['reservation_date'];
+    $time = $_POST['reservation_time'];
+    $guests = filter_input(INPUT_POST, 'guests', FILTER_VALIDATE_INT);
 
-    $name = $_POST['name'];
-    $phone = $_POST['phone'];
-    $date = $_POST['date'];
-    $time = $_POST['time'];
-    $people = (int)$_POST['people'];
+    if ($name !== '' && filter_var($email, FILTER_VALIDATE_EMAIL)
+        && $date >= date('Y-m-d') && $guests && $guests > 0 && $guests <= 20) {
 
-    $sql = "INSERT INTO reservations
-    (name, phone, date, time, people)
-    VALUES (?, ?, ?, ?, ?)";
+        $stmt = mysqli_prepare($conn,
+            "INSERT INTO reservations (customer_name,email,reservation_date,reservation_time,guests) VALUES (?,?,?,?,?)"
+        );
 
-    $stmt = mysqli_prepare($conn, $sql);
-    mysqli_stmt_bind_param(
-        $stmt, "ssssi",
-        $name, $phone, $date, $time, $people
-    );
+        mysqli_stmt_bind_param($stmt, "ssssi", $name, $email, $date, $time, $guests);
 
-    if(mysqli_stmt_execute($stmt)) {
-        $message = "Reservation successful!";
+        if (mysqli_stmt_execute($stmt)) {
+            $message = "Your table has been reserved successfully!";
+        }
+    }
+
+    if ($message === '') {
+        $message = "Please check your reservation information.";
     }
 }
 ?>
 
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Reservation</title>
-    <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reservation</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<div class="form-box">
+<div class="container py-5">
+<div class="form-card mx-auto" style="max-width:650px">
 
-    <h2>Reserve Your Table</h2>
+<h2 class="mb-3">☕ Reserve Your Table</h2>
+<p class="text-secondary">Enjoy a wonderful moment at The Mint Coffee.</p>
 
-    <p><?php echo $message; ?></p>
+<?php if($message): ?>
+<div class="alert alert-info"><?php echo htmlspecialchars($message); ?></div>
+<?php endif; ?>
 
-    <form method="POST">
+<form method="POST">
 
-        <input type="text" name="name"
-        placeholder="Your Name" required>
+<label class="form-label">Full Name</label>
+<input type="text" name="customer_name" class="form-control mb-3" required>
 
-        <input type="text" name="phone"
-        placeholder="Phone Number" required>
+<label class="form-label">Email</label>
+<input type="email" name="email" class="form-control mb-3" required>
 
-        <label>Reservation Date</label>
-        <input type="date" name="date"
-        min="<?php echo date('Y-m-d'); ?>" required>
+<label class="form-label">Reservation Date</label>
+<input type="date" name="reservation_date" min="<?php echo date('Y-m-d'); ?>" class="form-control mb-3" required>
 
-        <label>Reservation Time</label>
-        <input type="time" name="time" required>
+<label class="form-label">Reservation Time</label>
+<input type="time" name="reservation_time" class="form-control mb-3" required>
 
-        <input type="number" name="people"
-        placeholder="Number of People"
-        min="1" max="20" required>
+<label class="form-label">Number of Guests</label>
+<input type="number" name="guests" min="1" max="20" class="form-control mb-4" required>
 
-        <button type="submit" name="reserve">
-            Reserve Now
-        </button>
+<button class="btn-coffee">Reserve Now</button>
+<a href="index.php" class="btn btn-secondary">Back Home</a>
 
-    </form>
-
-    <a href="index.php">Back Home</a>
-
+</form>
+</div>
 </div>
 
 </body>

@@ -1,43 +1,31 @@
 
 <?php
-include "config.php";
+include 'config.php';
 
-$message = "";
+$error = '';
 
-if (isset($_POST['save'])) {
-
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $name = trim($_POST['name']);
+    $category = $_POST['category'];
     $description = trim($_POST['description']);
-    $price = (float) $_POST['price'];
+    $price = $_POST['price'];
     $image = trim($_POST['image']);
 
-    if ($name === "" || $description === "" || $price <= 0) {
-        $message = "Please fill in all required fields!";
+    if ($name === '' || !is_numeric($price) || $price < 0) {
+        $error = "Please enter valid product information.";
     } else {
-
-        $stmt = mysqli_prepare(
-            $conn,
-            "INSERT INTO products (name, description, price, image)
-             VALUES (?, ?, ?, ?)"
+        $stmt = mysqli_prepare($conn,
+            "INSERT INTO products (name, category, description, price, image) VALUES (?, ?, ?, ?, ?)"
         );
-
-        mysqli_stmt_bind_param(
-            $stmt,
-            "ssds",
-            $name,
-            $description,
-            $price,
-            $image
+        mysqli_stmt_bind_param($stmt, "sssds",
+            $name, $category, $description, $price, $image
         );
 
         if (mysqli_stmt_execute($stmt)) {
-            header("Location: index.php");
+            header("Location: admin.php");
             exit;
-        } else {
-            $message = "Something went wrong!";
         }
-
-        mysqli_stmt_close($stmt);
+        $error = "Could not save product.";
     }
 }
 ?>
@@ -45,208 +33,50 @@ if (isset($_POST['save'])) {
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>Add Product | The Mint Coffee</title>
-
-    <link rel="stylesheet" href="style.css">
-
-    <style>
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background: #edf5ef;
-            color: #234638;
-        }
-
-        header {
-            background: #174c3c;
-            color: white;
-            text-align: center;
-            padding: 30px 15px;
-        }
-
-        header h1 {
-            margin: 0;
-            font-size: 32px;
-            letter-spacing: 3px;
-        }
-
-        header p {
-            color: #c8e8d7;
-        }
-
-        .form-container {
-            max-width: 600px;
-            margin: 45px auto;
-            padding: 35px;
-            background: white;
-            border-radius: 18px;
-            box-shadow: 0 8px 25px rgba(0,0,0,0.08);
-        }
-
-        .form-container h2 {
-            text-align: center;
-            color: #174c3c;
-            margin-bottom: 10px;
-        }
-
-        .subtitle {
-            text-align: center;
-            color: #777;
-            margin-bottom: 30px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: bold;
-        }
-
-        input, textarea {
-            width: 100%;
-            padding: 13px;
-            margin-bottom: 20px;
-            border: 1px solid #cbded2;
-            border-radius: 9px;
-            font-size: 15px;
-            box-sizing: border-box;
-        }
-
-        input:focus, textarea:focus {
-            outline: none;
-            border-color: #286b55;
-            box-shadow: 0 0 5px #a4d4b8;
-        }
-
-        textarea {
-            height: 110px;
-            resize: vertical;
-        }
-
-        .save-btn {
-            width: 100%;
-            padding: 14px;
-            background: #286b55;
-            color: white;
-            border: none;
-            border-radius: 9px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-
-        .save-btn:hover {
-            background: #174c3c;
-        }
-
-        .back-btn {
-            display: block;
-            text-align: center;
-            margin-top: 20px;
-            color: #286b55;
-            text-decoration: none;
-            font-weight: bold;
-        }
-
-        .back-btn:hover {
-            text-decoration: underline;
-        }
-
-        .message {
-            background: #ffe4e4;
-            color: #a32222;
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-
-        footer {
-            background: #174c3c;
-            color: white;
-            text-align: center;
-            padding: 20px;
-            margin-top: 50px;
-        }
-
-        @media(max-width: 650px) {
-            .form-container {
-                margin: 25px 15px;
-                padding: 22px;
-            }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Add Product</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
 </head>
-
 <body>
 
-<header>
-    <h1>THE MINT COFFEE</h1>
-    <p>Fresh Coffee • Fresh Moments</p>
-</header>
+<div class="container py-5">
+<div class="form-card mx-auto" style="max-width:650px">
 
-<div class="form-container">
+<h2 class="mb-4">☕ Add New Product</h2>
 
-    <h2>Add New Product</h2>
-    <p class="subtitle">Add a new delicious product to our menu.</p>
+<?php if($error): ?>
+<div class="alert alert-danger"><?php echo htmlspecialchars($error); ?></div>
+<?php endif; ?>
 
-    <?php if ($message != "") { ?>
-        <div class="message">
-            <?php echo htmlspecialchars($message); ?>
-        </div>
-    <?php } ?>
+<form method="POST">
 
-    <form method="POST">
+<label class="form-label">Product Name</label>
+<input type="text" name="name" class="form-control mb-3" required>
 
-        <label>Product Name</label>
-        <input
-            type="text"
-            name="name"
-            placeholder="Enter product name"
-            required
-        >
+<label class="form-label">Category</label>
+<select name="category" class="form-select mb-3">
+<option value="Coffee">Coffee</option>
+<option value="Drinks">Drinks</option>
+<option value="Desserts">Desserts</option>
+</select>
 
-        <label>Description</label>
-        <textarea
-            name="description"
-            placeholder="Describe your product..."
-            required
-        ></textarea>
+<label class="form-label">Description</label>
+<textarea name="description" class="form-control mb-3"></textarea>
 
-        <label>Price (€)</label>
-        <input
-            type="number"
-            name="price"
-            step="0.01"
-            min="0.01"
-            placeholder="Example: 2.50"
-            required
-        >
+<label class="form-label">Price (€)</label>
+<input type="number" name="price" step="0.01" min="0" class="form-control mb-3" required>
 
-        <label>Image Filename</label>
-        <input
-            type="text"
-            name="image"
-            placeholder="Example: coffee.jpg"
-        >
+<label class="form-label">Image URL</label>
+<input type="url" name="image" class="form-control mb-4">
 
-        <button type="submit" name="save" class="save-btn">
-            + Save Product
-        </button>
+<button class="btn-coffee">Save Product</button>
+<a href="admin.php" class="btn btn-secondary">Cancel</a>
 
-    </form>
-
-    <a href="index.php" class="back-btn">
-        ← Back to Home
-    </a>
-
+</form>
 </div>
-
-<footer>
-    <p>© 2026 The Mint Coffee | All Rights Reserved</p>
-</footer>
+</div>
 
 </body>
 </html>

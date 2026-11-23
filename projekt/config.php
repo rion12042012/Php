@@ -1,15 +1,12 @@
 
-<?php
 
-$conn = mysqli_connect(
-    "localhost",
-    "root",
-    "",
-    "the_mint_coffee"
-);
+<?php
+$conn = mysqli_connect("localhost", "root", "", "mint_coffee");
 
 if (!$conn) {
-    die("Connection failed: " . mysqli_connect_error());
+    die("Database connection failed: " . mysqli_connect_error());
 }
 
+mysqli_set_charset($conn, "utf8mb4");
 ?>
+

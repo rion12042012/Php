@@ -1,188 +1,92 @@
 
 <?php
-include "config.php";
+include 'config.php';
 
-$message = "";
+$message = '';
 
-// Merr produktet nga databaza
-$result = mysqli_query($conn, "SELECT * FROM products");
-
-// Kontrollon nese eshte derguar porosia
-if (isset($_POST['order'])) {
-
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $product_id = filter_input(INPUT_POST, 'product_id', FILTER_VALIDATE_INT);
     $customer = trim($_POST['customer_name']);
-    $phone = trim($_POST['phone']);
-    $product_id = (int) $_POST['product_id'];
-    $quantity = (int) $_POST['quantity'];
+    $quantity = filter_input(INPUT_POST, 'quantity', FILTER_VALIDATE_INT);
 
-    // Kontrollon sasine
-    if ($customer == "" || $phone == "" || $quantity < 1 || $quantity > 30) {
+    if ($product_id && $customer !== '' && $quantity && $quantity > 0 && $quantity <= 100) {
 
-        $message = "Please complete all fields correctly!";
-
-    } else {
-
-        // Merr produktin nga databaza
-        $sql = "SELECT * FROM products WHERE id = ?";
-
-        $stmt = mysqli_prepare($conn, $sql);
-
+        $stmt = mysqli_prepare($conn, "SELECT price FROM products WHERE id=?");
         mysqli_stmt_bind_param($stmt, "i", $product_id);
-
         mysqli_stmt_execute($stmt);
-
-        $product_result = mysqli_stmt_get_result($stmt);
-
-        $product = mysqli_fetch_assoc($product_result);
+        $product = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
 
         if ($product) {
-
-            $product_name = $product['name'];
-
             $total = $product['price'] * $quantity;
 
-            // Regjistron porosine
-            $sql = "INSERT INTO orders
-            (customer_name, phone, product_name, quantity, total)
-            VALUES (?, ?, ?, ?, ?)";
-
-            $stmt = mysqli_prepare($conn, $sql);
-
-            mysqli_stmt_bind_param(
-                $stmt,
-                "sssid",
-                $customer,
-                $phone,
-                $product_name,
-                $quantity,
-                $total
+            $stmt = mysqli_prepare($conn,
+                "INSERT INTO orders (product_id, customer_name, quantity, total) VALUES (?, ?, ?, ?)"
+            );
+            mysqli_stmt_bind_param($stmt, "isid",
+                $product_id, $customer, $quantity, $total
             );
 
             if (mysqli_stmt_execute($stmt)) {
-
-                $message = "Your order was successful! Total: " .
-                number_format($total, 2) . " €";
-
-            } else {
-
-                $message = "Something went wrong!";
-
+                $message = "Your order was placed successfully!";
             }
-
-        } else {
-
-            $message = "Product not found!";
-
         }
     }
+
+    if ($message === '') {
+        $message = "Please check your order details.";
+    }
 }
+
+$products = mysqli_query($conn, "SELECT * FROM products ORDER BY name");
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-
-    <meta charset="UTF-8">
-
-    <meta name="viewport"
-    content="width=device-width, initial-scale=1.0">
-
-    <title>Order Food | The Mint Coffee</title>
-
-    <link rel="stylesheet" href="style.css">
-
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Place an Order</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
 </head>
-
 <body>
 
-<header>
+<div class="container py-5">
+<div class="form-card mx-auto" style="max-width:600px">
 
-    <h1>THE MINT COFFEE</h1>
+<h2 class="mb-4">☕ Place Your Order</h2>
 
-    <nav>
-        <a href="index.php">Home</a>
-        <a href="view.php">Menu</a>
-        <a href="reservation.php">Reservation</a>
-    </nav>
+<?php if($message): ?>
+<div class="alert alert-info"><?php echo htmlspecialchars($message); ?></div>
+<?php endif; ?>
 
-</header>
+<form method="POST">
 
-<div class="form-box">
+<label class="form-label">Your Name</label>
+<input type="text" name="customer_name" class="form-control mb-3" required>
 
-    <h2>Order Your Food</h2>
+<label class="form-label">Choose Product</label>
+<select name="product_id" class="form-select mb-3" required>
+<option value="">Select a product</option>
+<?php while($p = mysqli_fetch_assoc($products)): ?>
+<option value="<?php echo $p['id']; ?>"
+<?php echo isset($_GET['product_id']) && (int)$_GET['product_id'] === (int)$p['id'] ? 'selected' : ''; ?>>
+<?php echo htmlspecialchars($p['name']); ?> -
+<?php echo number_format((float)$p['price'], 2); ?> €
+</option>
+<?php endwhile; ?>
+</select>
 
-    <p><?php echo htmlspecialchars($message); ?></p>
+<label class="form-label">Quantity</label>
+<input type="number" name="quantity" min="1" max="100" value="1" class="form-control mb-4" required>
 
-    <form method="POST">
+<button class="btn-coffee">Confirm Order</button>
 
-        <label>Your Name</label>
+<a href="index.php" class="btn btn-secondary">Back</a>
 
-        <input
-            type="text"
-            name="customer_name"
-            placeholder="Enter your name"
-            required
-        >
-
-        <label>Phone Number</label>
-
-        <input
-            type="text"
-            name="phone"
-            placeholder="Enter your phone"
-            required
-        >
-
-        <label>Select Product</label>
-
-        <select name="product_id" required>
-
-            <option value="">Choose Product</option>
-
-            <?php
-
-            mysqli_data_seek($result, 0);
-
-            while ($row = mysqli_fetch_assoc($result)) {
-
-            ?>
-
-                <option value="<?php echo $row['id']; ?>">
-
-                    <?php echo htmlspecialchars($row['name']); ?>
-
-                    - <?php echo $row['price']; ?> €
-
-                </option>
-
-            <?php } ?>
-
-        </select>
-
-        <label>Quantity</label>
-
-        <input
-            type="number"
-            name="quantity"
-            min="1"
-            max="30"
-            placeholder="Enter quantity"
-            required
-        >
-
-        <button type="submit" name="order">
-
-            Place Order
-
-        </button>
-
-    </form>
-
-    <a href="index.php">← Back to Home</a>
-
+</form>
+</div>
 </div>
 
 </body>
-
 </html>

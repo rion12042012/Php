@@ -1,21 +1,22 @@
 
 <?php
+include 'config.php';
 
-include "config.php";
-
-$id = (int)($_GET['id'] ?? 0);
-
-if ($id > 0) {
-
-    $sql = "DELETE FROM products WHERE id=?";
-
-    $stmt = mysqli_prepare($conn, $sql);
-    mysqli_stmt_bind_param($stmt, "i", $id);
-
-    mysqli_stmt_execute($stmt);
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    header("Location: admin.php");
+    exit;
 }
 
-header("Location: view.php");
-exit;
+$id = filter_input(INPUT_POST, 'id', FILTER_VALIDATE_INT);
 
+if (!$id) {
+    die("Invalid product ID.");
+}
+
+$stmt = mysqli_prepare($conn, "DELETE FROM products WHERE id = ?");
+mysqli_stmt_bind_param($stmt, "i", $id);
+mysqli_stmt_execute($stmt);
+
+header("Location: admin.php");
+exit;
 ?>

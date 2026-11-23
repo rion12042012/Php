@@ -1,72 +1,98 @@
 
 <?php
-include "config.php";
+include 'config.php';
 
-$id = (int)($_GET['id'] ?? 0);
+$id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
 
-$result = mysqli_query($conn, "SELECT * FROM products WHERE id=$id");
-$product = mysqli_fetch_assoc($result);
-
-if (!$product) {
-    die("Product not found!");
+if (!$id) {
+    die("Invalid product ID.");
 }
 
-if(isset($_POST['update'])) {
+$stmt = mysqli_prepare($conn, "SELECT * FROM products WHERE id = ?");
+mysqli_stmt_bind_param($stmt, "i", $id);
+mysqli_stmt_execute($stmt);
+$product = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
 
-    $name = $_POST['name'];
-    $description = $_POST['description'];
+if (!$product) {
+    die("Product not found.");
+}
+
+$error = '';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $name = trim($_POST['name']);
+    $category = $_POST['category'];
+    $description = trim($_POST['description']);
     $price = $_POST['price'];
+    $image = trim($_POST['image']);
 
-    $sql = "UPDATE products
-            SET name=?, description=?, price=?
-            WHERE id=?";
+    if ($name === '' || !is_numeric($price) || $price < 0) {
+        $error = "Please enter valid information.";
+    } else {
+        $stmt = mysqli_prepare($conn,
+            "UPDATE products SET name=?, category=?, description=?, price=?, image=? WHERE id=?"
+        );
+        mysqli_stmt_bind_param($stmt, "sssdsi",
+            $name, $category, $description, $price, $image, $id
+        );
 
-    $stmt = mysqli_prepare($conn, $sql);
-    mysqli_stmt_bind_param(
-        $stmt, "ssdi",
-        $name, $description, $price, $id
-    );
-
-    if(mysqli_stmt_execute($stmt)) {
-        header("Location: view.php");
-        exit;
+        if (mysqli_stmt_execute($stmt)) {
+            header("Location: admin.php");
+            exit;
+        }
+        $error = "Update failed.";
     }
 }
 ?>
 
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Edit Product</title>
-    <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Edit Product</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<div class="form-box">
+<div class="container py-5">
+<div class="form-card mx-auto" style="max-width:650px">
 
-    <h2>Edit Product</h2>
+<h2 class="mb-4">Edit Product</h2>
 
-    <form method="POST">
+<?php if($error): ?>
+<div class="alert alert-danger"><?php echo htmlspecialchars($error); ?></div>
+<?php endif; ?>
 
-        <input type="text" name="name"
-        value="<?php echo htmlspecialchars($product['name']); ?>"
-        required>
+<form method="POST">
 
-        <textarea name="description"><?php
-            echo htmlspecialchars($product['description']);
-        ?></textarea>
+<label class="form-label">Product Name</label>
+<input name="name" class="form-control mb-3" value="<?php echo htmlspecialchars($product['name']); ?>" required>
 
-        <input type="number" step="0.01" name="price"
-        value="<?php echo $product['price']; ?>" required>
+<label class="form-label">Category</label>
+<select name="category" class="form-select mb-3">
+<?php foreach(['Coffee','Drinks','Desserts'] as $category): ?>
+<option value="<?php echo $category; ?>" <?php echo $product['category'] === $category ? 'selected' : ''; ?>>
+<?php echo $category; ?>
+</option>
+<?php endforeach; ?>
+</select>
 
-        <button type="submit" name="update">
-            Update Product
-        </button>
+<label class="form-label">Description</label>
+<textarea name="description" class="form-control mb-3"><?php echo htmlspecialchars($product['description']); ?></textarea>
 
-    </form>
+<label class="form-label">Price</label>
+<input type="number" name="price" step="0.01" min="0" class="form-control mb-3" value="<?php echo htmlspecialchars($product['price']); ?>" required>
 
-    <a href="view.php">Back</a>
+<label class="form-label">Image URL</label>
+<input type="url" name="image" class="form-control mb-4" value="<?php echo htmlspecialchars($product['image']); ?>">
 
+<button class="btn-coffee">Update Product</button>
+<a href="admin.php" class="btn btn-secondary">Cancel</a>
+
+</form>
+</div>
 </div>
 
 </body>

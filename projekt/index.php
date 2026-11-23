@@ -1,80 +1,92 @@
 
 <?php
-include "config.php";
+include 'config.php';
 
-$result = mysqli_query($conn, "SELECT * FROM products");
+$result = mysqli_query($conn, "SELECT * FROM products ORDER BY id DESC");
 ?>
 
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>The Mint Coffee</title>
-    <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Mint Coffee</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
 </head>
-
 <body>
 
+<nav class="navbar navbar-expand-lg">
+<div class="container">
+<a class="navbar-brand" href="index.php">☕ The Mint Coffee</a>
+<div class="ms-auto">
+<a class="nav-link d-inline" href="index.php">Home</a>
+<a class="nav-link d-inline" href="#menu">Our Menu</a>
+<a class="nav-link d-inline" href="reservation.php">Reservation</a>
+<a class="nav-link d-inline" href="order.php">Order</a>
+<a class="nav-link d-inline" href="admin.php">Admin</a>
+</div>
+</div>
+</nav>
 
 <section class="hero">
-    <div>
-        <h2>Welcome to The Mint Coffee</h2>
-        <p>Fresh Coffee. Sweet Moments.</p>
-        <a href="create.php" class="btn">Explore Our Coffee</a>
-    </div>
+<div>
+<h1>Fresh Coffee,<br>Sweet Moments!</h1>
+<p>Enjoy delicious coffee, refreshing drinks and wonderful desserts at The Mint Coffee.</p>
+<a href="#menu" class="btn-coffee">Explore Our Menu</a>
+<a href="reservation.php" class="btn-coffee">Reserve a Table</a>
+</div>
 </section>
 
-<header>
-    <h1>✳ THE MINT COFFEE</h1>
+<div class="container" id="menu">
 
-    <nav>
-        <a href="index.php">Home</a>
-        <a href="view.php">Menu</a>
-        <a href="reservation.php">Reservation</a>
-        <a href="order.php">Order</a>
-        <a href="admin.php">Admin</a>
-    </nav>
-</header>
+<div class="section-title">
+<h2>Our Special Menu ☕</h2>
+<p>Fresh coffee, delicious drinks and sweet desserts.</p>
+</div>
 
-<section class="hero">
-    <h2>Welcome to The Mint Coffee</h2>
-    <p>Good coffee. Better company.</p>
-    <a href="view.php" class="btn">Explore Menu</a>
-</section>
+<div class="row g-4">
 
-<section class="menu">
-    <h2>Our Menu</h2>
+<?php while($row = mysqli_fetch_assoc($result)): ?>
 
-    <div class="products">
+<div class="col-lg-4 col-md-6">
+<div class="product-card">
 
-    <?php while($row = mysqli_fetch_assoc($result)) { ?>
+<img src="<?php echo htmlspecialchars($row['image'] ?? ''); ?>"
+alt="<?php echo htmlspecialchars($row['name']); ?>">
 
-        <div class="card">
+<div class="product-info">
+<small class="text-secondary">
+<?php echo htmlspecialchars($row['category']); ?>
+</small>
 
-            <h3>
-                <?php echo htmlspecialchars($row['name']); ?>
-            </h3>
+<h5 class="mt-2">
+<?php echo htmlspecialchars($row['name']); ?>
+</h5>
 
-            <p>
-                <?php echo htmlspecialchars($row['description']); ?>
-            </p>
+<p><?php echo htmlspecialchars($row['description']); ?></p>
 
-            <h4>
-                <?php echo $row['price']; ?> €
-            </h4>
+<div class="d-flex justify-content-between align-items-center">
+<span class="product-price">
+<?php echo number_format((float)$row['price'], 2); ?> €
+</span>
 
-            <a href="order.php?id=<?php echo $row['id']; ?>">
-                Order Now
-            </a>
+<a href="order.php?product_id=<?php echo (int)$row['id']; ?>"
+class="btn-coffee">Order Now</a>
+</div>
+</div>
+</div>
+</div>
 
-        </div>
+<?php endwhile; ?>
 
-    <?php } ?>
+</div>
+</div>
 
-    </div>
-</section>
-
-<footer>
-    <p>© 2026 The Mint Coffee</p>
+<footer class="footer">
+<h3>☕ The Mint Coffee</h3>
+<p>Fresh Coffee • Delicious Drinks • Sweet Moments</p>
+<p>© 2026 The Mint Coffee. All Rights Reserved.</p>
 </footer>
 
 </body>
